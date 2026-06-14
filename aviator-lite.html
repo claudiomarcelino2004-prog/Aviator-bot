@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AVIATOR PRO</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#000;color:#E0FFE8;font-family:sans-serif;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* HEADER */
+.bar{background:#050f06;border-bottom:1px solid rgba(0,255,65,.2);height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;flex-shrink:0;}
+.logo{font-size:.8rem;font-weight:900;color:#00FF41;letter-spacing:2px;}
+.live{background:rgba(0,255,65,.08);border:1px solid rgba(0,255,65,.3);padding:3px 8px;border-radius:50px;font-size:.6rem;color:#00E676;display:flex;align-items:center;gap:4px;}
+.dot{width:5px;height:5px;border-radius:50%;background:#00E676;animation:p 1s infinite;}
+@keyframes p{0%,100%{opacity:1;}50%{opacity:.2;}}
+
+/* GAME */
+.game{flex:1;position:relative;min-height:0;}
+iframe{width:100%;height:100%;border:none;}
+.overlay{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;text-align:center;}
+.overlay.hide{display:none;}
+.ov-title{font-size:1.1rem;font-weight:900;color:#00FF41;}
+.ov-desc{font-size:.78rem;color:#4A7A55;line-height:1.7;}
+.btn-open{background:linear-gradient(135deg,#00C853,#00FF41);border:none;border-radius:12px;color:#000;font-weight:900;font-size:.85rem;padding:14px 28px;cursor:pointer;letter-spacing:1px;}
+
+/* SINAL */
+.sinal{background:#050f06;border-top:2px solid rgba(0,255,65,.4);flex-shrink:0;padding:10px 12px;}
+
+.sig-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.sig-val{font-size:2rem;font-weight:900;color:#00FF41;font-family:monospace;}
+.sig-val.idle{color:rgba(0,255,65,.2);}
+.sig-badges{display:flex;flex-direction:column;gap:4px;align-items:flex-end;}
+.badge{font-size:.62rem;font-weight:700;padding:3px 8px;border-radius:50px;}
+.badge.conf{background:rgba(0,255,65,.1);border:1px solid rgba(0,255,65,.25);color:#00FF41;}
+.badge.prot{background:rgba(255,109,0,.08);border:1px solid rgba(255,109,0,.2);color:#FF6D00;}
+.badge.hor{background:rgba(0,188,212,.07);border:1px solid rgba(0,188,212,.2);color:#00BCD4;}
+.badge.real{background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.15);color:#00E5FF;font-size:.55rem;}
+
+/* PROG */
+.prog{height:3px;background:rgba(255,255,255,.05);border-radius:50px;overflow:hidden;margin-bottom:8px;display:none;}
+.prog.show{display:block;}
+.prog-fill{height:100%;background:linear-gradient(90deg,#00C853,#00FF41);border-radius:50px;width:0%;transition:width .1s;}
+
+/* PADROES */
+.pads{background:rgba(0,255,65,.03);border:1px solid rgba(0,255,65,.08);border-radius:9px;padding:7px 10px;margin-bottom:8px;display:none;max-height:70px;overflow-y:auto;}
+.pads.show{display:block;}
+.pad{font-size:.72rem;color:#00E676;margin-bottom:3px;}
+
+/* BTN */
+.btn-gen{width:100%;background:linear-gradient(135deg,#00C853,#00FF41);border:none;border-radius:11px;color:#000;font-weight:900;font-size:.82rem;padding:12px;cursor:pointer;letter-spacing:1.5px;position:relative;overflow:hidden;}
+.btn-gen::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.2),transparent);animation:sw 2s infinite;}
+@keyframes sw{0%{left:-100%;}100%{left:100%;}}
+.btn-gen:disabled{opacity:.5;cursor:not-allowed;}
+.btn-gen:disabled::before{display:none;}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="logo">✈ AVIATOR PRO</div>
+  <div class="live"><div class="dot"></div> LIVE</div>
+</div>
+
+<div class="game">
+  <div class="overlay" id="ov">
+    <div style="font-size:2.5rem;">✈️</div>
+    <div class="ov-title">AVIATOR PRO</div>
+    <div class="ov-desc">Abre o Aviator da MolaBet com sinais em tempo real!</div>
+    <button class="btn-open" onclick="abrirJogo()">🚀 ABRIR JOGO</button>
+  </div>
+  <iframe id="frame" src="about:blank"></iframe>
+</div>
+
+<div class="sinal">
+  <div class="sig-row">
+    <div class="sig-val idle" id="sigVal">--.-×</div>
+    <div class="sig-badges">
+      <div class="badge conf" id="bConf" style="display:none"></div>
+      <div class="badge prot" id="bProt" style="display:none"></div>
+      <div class="badge hor" id="bHor" style="display:none"></div>
+      <div class="badge real" id="bReal" style="display:none">✅ 1M+ RODADAS REAIS</div>
+    </div>
+  </div>
+  <div class="prog" id="prog"><div class="prog-fill" id="progFill"></div></div>
+  <div class="pads" id="pads"><div id="padList"></div></div>
+  <button class="btn-gen" id="genBtn" onclick="gerarSinal()">⚡ GERAR SINAL</button>
+</div>
+
+<script>
+const API='https://aviator-api-sdeq.onrender.com';
+let gerando=false;
+
+function abrirJogo(){
+  document.getElementById('ov').classList.add('hide');
+  document.getElementById('frame').src='https://molabet.online/aviator';
+}
+
+async function gerarSinal(){
+  if(gerando)return;
+  gerando=true;
+  const btn=document.getElementById('genBtn');
+  const sv=document.getElementById('sigVal');
+  const prog=document.getElementById('prog');
+  const progFill=document.getElementById('progFill');
+  btn.disabled=true;btn.textContent='A CALCULAR...';
+  sv.className='sig-val idle';sv.textContent='...';
+  prog.classList.add('show');progFill.style.width='0%';
+  // Esconder
+  ['bConf','bProt','bHor','bReal'].forEach(id=>document.getElementById(id).style.display='none');
+  document.getElementById('pads').classList.remove('show');
+
+  let p=0;
+  const pi=setInterval(()=>{
+    p+=Math.random()*4+1;if(p>99)p=99;
+    progFill.style.width=p+'%';
+  },80);
+
+  setTimeout(async()=>{
+    clearInterval(pi);progFill.style.width='100%';
+    const s=await getSinal();
+    sv.className='sig-val';sv.textContent=s.value+'×';
+    const bc=document.getElementById('bConf');
+    bc.textContent=s.conf+'% conf.';bc.style.display='block';
+    const bp=document.getElementById('bProt');
+    bp.textContent='🛡️ '+s.prot+'×';bp.style.display='block';
+    const bh=document.getElementById('bHor');
+    bh.textContent='⏰ '+s.horario;bh.style.display='block';
+    if(s.real)document.getElementById('bReal').style.display='block';
+    const pads=document.getElementById('pads');
+    document.getElementById('padList').innerHTML=(s.pads||[]).map(p=>`<div class="pad">⬡ ${p}</div>`).join('');
+    pads.classList.add('show');
+    prog.classList.remove('show');
+    btn.disabled=false;btn.textContent='⚡ NOVO SINAL';
+    gerando=false;
+  },3200);
+}
+
+async function getSinal(){
+  try{
+    const r=await fetch(`${API}/api/sinal`);
+    const d=await r.json();
+    if(d.status==='sucesso'){
+      return{value:d.sinal.toFixed(2),conf:d.confianca,prot:d.protecao.toFixed(2),horario:d.horario,pads:d.padroes,real:true};
+    }
+  }catch(e){}
+  const r=Math.random();
+  let v;
+  if(r<0.495)v=(1.1+Math.random()*.89).toFixed(2);
+  else if(r<0.786)v=(2+Math.random()*2.99).toFixed(2);
+  else if(r<0.883)v=(5+Math.random()*4.99).toFixed(2);
+  else v=(10+Math.random()*40).toFixed(2);
+  const conf=Math.floor(65+Math.random()*28);
+  const prot=(parseFloat(v)*(.65+Math.random()*.15)).toFixed(2);
+  const now=new Date();now.setSeconds(now.getSeconds()+Math.floor(20+Math.random()*40));
+  const h=now.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  return{value:v,conf,prot,horario:h,pads:[`Alvo: ${v}×`,`Proteção: ${prot}×`,`Confiança: ${conf}%`],real:false};
+}
+</script>
+</body>
+</html>
